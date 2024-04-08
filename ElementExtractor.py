@@ -11,14 +11,46 @@ import re
 import ftfy
 import time
 
+# 將全形英文字母轉成半形
+def full_to_half_width(text):
+    """全形轉半形"""
+    result = ""
+    for char in text:
+        code = ord(char)
+        if code == 0x3000:  # 空格特殊處理
+            code = 0x20
+        elif 0xFF01 <= code <= 0xFF5E:  # 全形字符（不包括空格）轉換
+            code -= 0xFEE0
+        result += chr(code)
+    return result
+
 class Judicial_Parser:
     
     def wash(self, repeat=3):
         jfull_raw = f'{self.semi_raw}'
         
+        # 先將全部英文全形轉半形
+        jfull_raw = full_to_half_width(jfull_raw)
+        
+        # 再將全部數字全形轉半形
+        big_numbers = {
+            '０' : '0',
+            '１' : '1', 
+            '２' : '2', 
+            '３' : '3', 
+            '４' : '4', 
+            '５' : '5', 
+            '６' : '6', 
+            '７' : '7', 
+            '８' : '8', 
+            '９' : '9',
+            }
+        for bnF, bnS in big_numbers.items():
+            jfull_raw = jfull_raw.replace(bnF, bnS)
+        
         # 準備標準化輸入
         chinese_numbers = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
-        
+
         # 不知道為什麼有些步驟會失效，故重複做個幾次
         for _ in range(repeat):
             # 找出所有包含\r\n但卻是把正確意思切開的
